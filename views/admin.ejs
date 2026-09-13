@@ -1,0 +1,76 @@
+<%- include('partials/header') %>
+
+<h1 class="mb-4">Paneli i Administrimit</h1>
+
+<div class="row">
+  <div class="col-md-6">
+    <h3>Menaxho Menunë</h3>
+    <form id="addMenuForm" class="mb-3">
+      <div class="mb-2"><input name="name" placeholder="Emri" class="form-control" required /></div>
+      <div class="mb-2"><input name="category" placeholder="Kategoria" class="form-control" /></div>
+      <div class="mb-2"><input name="price" placeholder="Çmimi" type="number" step="0.01" class="form-control" required /></div>
+      <div class="mb-2"><input name="image" placeholder="URL Foto" class="form-control" /></div>
+      <div class="mb-2"><textarea name="description" placeholder="Përshkrimi" class="form-control"></textarea></div>
+      <button class="btn btn-success">Shto në menu</button>
+    </form>
+
+    <div id="menuList">
+      <% items.forEach(function(it){ %>
+        <div class="d-flex border p-2 mb-2 align-items-center">
+          <div style="width:60px; height:40px; overflow:hidden; margin-right:10px;">
+            <img src="<%= it.image %>" style="width:100%; height:100%; object-fit:cover;">
+          </div>
+          <div class="flex-grow-1">
+            <strong><%= it.name %></strong><br/><small><%= it.category %> — <%= it.price %> €</small>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-danger delete-item" data-id="<%= it.id %>">Fshij</button>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <h3>Rezervimet</h3>
+    <div id="reservationsList">
+      <% reservations.forEach(function(r){ %>
+        <div class="border p-2 mb-2 d-flex justify-content-between align-items-start">
+          <div>
+            <div><strong><%= r.name %></strong> — <%= r.guests %> persona</div>
+            <div><small><%= r.date %> <%= r.time %> — <%= r.phone %></small></div>
+            <div><small><%= r.notes %></small></div>
+            <div class="mt-2"><small>Statusi pagesës: <% if (r.paid) { %><span class="badge bg-success">Paguar</span><% } else { %><span class="badge bg-warning text-dark">Jo paguar</span><% } %></small></div>
+          </div>
+          <div class="text-end">
+            <% if (!r.paid) { %>
+              <button class="btn btn-sm btn-primary mark-paid mb-2" data-id="<%= r.id %>">Shëno si i paguar</button>
+            <% } %>
+            <a href="/api/reservations/<%= r.id %>/pdf" class="btn btn-sm btn-outline-primary mb-2">Shkarko PDF</a>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+    <hr/>
+    <h3>Porositë</h3>
+    <div id="ordersList">
+      <% if (typeof orders !== 'undefined') { orders.forEach(function(o){ %>
+        <div class="border p-2 mb-2">
+          <div><strong><%= o.customer_name %></strong> — <%= o.total %> €</div>
+          <div><small><%= o.phone %> — <%= o.email || '' %></small></div>
+          <div><small>Adresa: <%= o.address || '-' %></small></div>
+          <div class="mt-2"><small>Statusi pagesës: <% if (o.paid) { %><span class="badge bg-success">Paguar</span><% } else { %><span class="badge bg-warning text-dark">Jo paguar</span><% } %>  Statusi dorëzimit: <% if (o.delivered) { %><span class="badge bg-success">Dorëzuar</span><% } else { %><span class="badge bg-secondary">Nuk është dorëzuar</span><% } %></small></div>
+          <div class="mt-2">
+            <% if (!o.delivered) { %>
+              <button class="btn btn-sm btn-success mark-delivered" data-id="<%= o.id %>">Shëno si dorëzuar</button>
+            <% } %>
+            <a href="/api/orders/<%= o.id %>/pdf" class="btn btn-sm btn-outline-primary">Shkarko PDF</a>
+          </div>
+        </div>
+      <% }) } %>
+    </div>
+    <a href="/admin/logout" class="btn btn-secondary mt-3">Dalje</a>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

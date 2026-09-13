@@ -1,0 +1,17 @@
+<%- include('partials/header') %>
+
+<h1 class="mb-4">Rezultati i pagesës</h1>
+<% if (paid) { %>
+  <div class="alert alert-success">Pagesa u përfundua me sukses. ID: <%= reservationId %></div>
+  <p>Mund të shkarkoni konfirmimin:</p>
+  <% if (resource === 'order') { %>
+    <a class="btn btn-primary" href="/api/orders/<%= reservationId %>/pdf">Shkarko faturën (PDF)</a>
+  <% } else { %>
+    <a class="btn btn-primary" href="/api/reservations/<%= reservationId %>/pdf">Shkarko konfirmimin (PDF)</a>
+  <% } %>
+<% } else { %>
+  <div class="alert alert-warning">Pagesa nuk u verifikua. Nëse mendoni se keni paguar, na kontaktoni.</div>
+  <a class="btn btn-secondary" href="/reservations">Kthehu te rezervimet</a>
+<% } %>
+
+<%- include('partials/footer') %>

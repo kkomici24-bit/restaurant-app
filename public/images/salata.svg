@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="100%" height="100%" fill="#f0fff4" />
+  <g transform="translate(80,120)">
+    <ellipse cx="320" cy="140" rx="260" ry="110" fill="#fff" stroke="#3e8e41" stroke-width="6" />
+    <text x="320" y="150" font-family="Arial" font-size="34" fill="#2e6b2f" text-anchor="middle">Salatë Greke</text>
+    <text x="320" y="190" font-family="Arial" font-size="16" fill="#2e6b2f" text-anchor="middle">Salatë me djathë feta dhe ullinj</text>
+  </g>
+</svg>
