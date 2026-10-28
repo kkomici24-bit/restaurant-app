@@ -124,10 +124,10 @@ h3 { margin: 18px 0 10px; font-size: clamp(24px, 3vw, 35px); line-height: 1.15; 
 .button { min-height: 42px; display: inline-flex; align-items: center; gap: 18px; padding: 0 15px; font-size: 11px; font-weight: 800; transition: background .18s ease, color .18s ease; }
 .button-dark { background: var(--ink); color: var(--paper); }
 .button-dark:hover { background: var(--orange); }
+.button-outline { border: 1px solid var(--ink); }
+.button-outline:hover { background: var(--lime); }
 .button span, .repo-link span { font-size: 15px; }
 .repo-link { font-size: 11px; font-weight: 800; transition: color .18s ease; }
-.domain-status { display: inline-flex; flex-direction: column; gap: 4px; color: var(--muted); font: 10px var(--mono); }
-.domain-status span { color: var(--orange); font-size: 8px; }
 .project-visual { position: relative; min-height: 255px; display: block; overflow: hidden; background: #d9e0d4; }
 .project-visual::after { content: ""; position: absolute; inset: 45% 0 0; background: linear-gradient(transparent, rgba(17,26,22,.58)); }
 .project-visual img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
