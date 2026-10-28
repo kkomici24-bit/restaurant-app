@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Admin add menu form
   const addMenuForm = document.getElementById('addMenuForm');
   if (addMenuForm) {
     addMenuForm.addEventListener('submit', async (e) => {
@@ -53,7 +52,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Admin delete item
   document.querySelectorAll('.delete-item').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('Fshij artikullin?')) return;
@@ -65,7 +63,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Admin: mark reservation as paid
   document.querySelectorAll('.mark-paid').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('Shënoj si i paguar?')) return;
@@ -81,8 +78,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Add to cart placeholder
-  // Cart functionality
   function getCart() { return JSON.parse(localStorage.getItem('cart') || '[]'); }
   function saveCart(c) { localStorage.setItem('cart', JSON.stringify(c)); }
   function renderCart() {
@@ -115,13 +110,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // When cart modal opens, render
   const cartModal = document.getElementById('cartModal');
   if (cartModal) {
     cartModal.addEventListener('show.bs.modal', renderCart);
   }
 
-  // Place order
   const placeOrderBtn = document.getElementById('placeOrderBtn');
   if (placeOrderBtn) {
     placeOrderBtn.addEventListener('click', async () => {
@@ -141,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const resultEl = document.getElementById('checkoutResult');
       if (r && r.success) {
         if (r.checkoutUrl) {
-          // redirect to stripe
           window.location.href = r.checkoutUrl;
           return;
         }
@@ -154,7 +146,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Admin: mark order delivered
   document.querySelectorAll('.mark-delivered').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('Shënoj si dorëzuar?')) return;

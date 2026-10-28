@@ -47,7 +47,6 @@ db.serialize(() => {
     created_at TEXT
   )`);
 
-  // Ensure 'paid' column exists on reservations table (for upgrades on existing DBs)
   db.all("PRAGMA table_info(reservations)", (err, rows) => {
     if (!err && rows) {
       const hasPaid = rows.some(r => r.name === 'paid');
@@ -57,7 +56,6 @@ db.serialize(() => {
     }
   });
 
-  // Auto-seed sample data for offline/demo use if menu is empty
   db.get('SELECT COUNT(*) AS cnt FROM menu_items', (err, row) => {
     if (!err && row && row.cnt === 0) {
       const insert = db.prepare('INSERT INTO menu_items (name, category, description, price, image) VALUES (?, ?, ?, ?, ?)');

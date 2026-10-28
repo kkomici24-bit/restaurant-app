@@ -13,8 +13,14 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const ADMIN_PASS = process.env.ADMIN_PASS || (IS_PRODUCTION ? '' : 'admin123');
+const SESSION_SECRET = process.env.SESSION_SECRET || (IS_PRODUCTION ? '' : 'keyboard_cat');
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+if (IS_PRODUCTION && (!ADMIN_PASS || !SESSION_SECRET)) {
+  throw new Error('ADMIN_PASS and SESSION_SECRET must be configured in production.');
+}
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -23,10 +29,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
+if (IS_PRODUCTION) app.set('trust proxy', 1);
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'keyboard_cat',
+  secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: IS_PRODUCTION
+  }
 }));
 
 function adminOnly(req, res, next) {
@@ -45,7 +57,6 @@ const transporter = hasEmailConfig ? nodemailer.createTransport({
   }
 }) : null;
 
-// Stripe (optional - configure STRIPE_SECRET_KEY in .env to enable)
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || '';
 const stripe = STRIPE_KEY ? require('stripe')(STRIPE_KEY) : null;
 
@@ -111,7 +122,6 @@ function generateOrderPDF(order) {
 async function sendOrderEmail(order, pdfBuffer, subject) {
   const canEmail = transporter && process.env.FROM_EMAIL && order.email;
   if (!canEmail) {
-    // Save PDF to outbox for offline use
     try {
       const outdir = path.join(__dirname, 'public', 'outbox');
       if (!fs.existsSync(outdir)) fs.mkdirSync(outdir, { recursive: true });
@@ -176,7 +186,6 @@ app.get('/menu', (req, res) => {
   });
 });
 
-// Create order (delivery or pickup). Minimal: stores order and optionally starts Stripe Checkout
 app.post('/api/create-order', (req, res) => {
   const { customer_name, email, phone, address, items } = req.body;
   if (!items || !Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'No items' });
@@ -188,7 +197,6 @@ app.post('/api/create-order', (req, res) => {
     const orderId = this.lastID;
     const order = { id: orderId, customer_name, email, phone, address, items: JSON.stringify(items), total, paid: 0, delivered: 0, created_at };
 
-    // If Stripe configured, create Checkout session
     if (stripe) {
       (async () => {
         try {
@@ -208,13 +216,11 @@ app.post('/api/create-order', (req, res) => {
         }
       })();
     } else {
-      // No Stripe: just return success and order id
       res.json({ success: true, orderId });
     }
   });
 });
 
-// Order success callback
 app.get('/order-success', async (req, res) => {
   const sessionId = req.query.session_id;
   const orderId = req.query.orderId;
@@ -244,7 +250,6 @@ app.get('/reservations', (req, res) => {
   res.render('reservations');
 });
 
-// API: get menu json
 app.get('/api/menu', (req, res) => {
   db.all('SELECT * FROM menu_items ORDER BY category', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -252,7 +257,6 @@ app.get('/api/menu', (req, res) => {
   });
 });
 
-// API: reservations (create) - simple flow (no Stripe)
 app.post('/api/reservations', (req, res) => {
   const { name, phone, email, date, time, guests, notes } = req.body;
   const created_at = new Date().toISOString();
@@ -263,11 +267,9 @@ app.post('/api/reservations', (req, res) => {
     const reservationId = this.lastID;
     const reservation = { id: reservationId, name, phone, email, date, time, guests, notes, created_at, paid };
 
-    // Send confirmation email (if configured)
     (async () => {
       try {
         const pdf = await generateReservationPDF(reservation, false);
-        // If SMTP not configured, sendReservationEmail will be a no-op
         await sendReservationEmail(reservation, pdf, 'Konfirmim rezervimi');
       } catch (e) {
         console.error('PDF/email error:', e);
@@ -278,7 +280,6 @@ app.post('/api/reservations', (req, res) => {
   });
 });
 
-// API: list reservations (admin)
 app.get('/api/reservations', adminOnly, (req, res) => {
   db.all('SELECT * FROM reservations ORDER BY created_at DESC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -286,7 +287,6 @@ app.get('/api/reservations', adminOnly, (req, res) => {
   });
 });
 
-// Admin UI
 app.get('/admin/login', (req, res) => {
   res.render('admin_login', { error: null });
 });
@@ -319,7 +319,6 @@ app.get('/admin', adminOnly, (req, res) => {
   });
 });
 
-// Admin: list orders
 app.get('/api/orders', adminOnly, (req, res) => {
   db.all('SELECT * FROM orders ORDER BY created_at DESC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -327,7 +326,6 @@ app.get('/api/orders', adminOnly, (req, res) => {
   });
 });
 
-// Admin: mark delivered
 app.put('/api/orders/:id/delivered', adminOnly, (req, res) => {
   const id = req.params.id;
   const delivered = req.body && typeof req.body.delivered !== 'undefined' ? (req.body.delivered ? 1 : 0) : 1;
@@ -337,7 +335,6 @@ app.put('/api/orders/:id/delivered', adminOnly, (req, res) => {
   });
 });
 
-// Download order PDF (admin only)
 app.get('/api/orders/:id/pdf', adminOnly, (req, res) => {
   const id = req.params.id;
   db.get('SELECT * FROM orders WHERE id = ?', [id], async (err, row) => {
@@ -351,7 +348,6 @@ app.get('/api/orders/:id/pdf', adminOnly, (req, res) => {
   });
 });
 
-// Download reservation PDF (admin only)
 app.get('/api/reservations/:id/pdf', adminOnly, (req, res) => {
   const id = req.params.id;
   db.get('SELECT * FROM reservations WHERE id = ?', [id], async (err, row) => {
@@ -366,7 +362,6 @@ app.get('/api/reservations/:id/pdf', adminOnly, (req, res) => {
     }
   });
 });
-// Mark reservation as paid/unpaid (admin)
 app.put('/api/reservations/:id/paid', adminOnly, (req, res) => {
   const id = req.params.id;
   const paid = req.body && typeof req.body.paid !== 'undefined' ? (req.body.paid ? 1 : 0) : 1;
@@ -376,7 +371,6 @@ app.put('/api/reservations/:id/paid', adminOnly, (req, res) => {
   });
 });
 
-// Admin API for menu CRUD
 app.post('/api/menu', adminOnly, (req, res) => {
   const { name, category, description, price, image } = req.body;
   db.run('INSERT INTO menu_items (name, category, description, price, image) VALUES (?, ?, ?, ?, ?)', [name, category, description, price, image], function (err) {
