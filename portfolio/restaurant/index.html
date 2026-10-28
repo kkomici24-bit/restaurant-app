@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#18231f">
+    <meta name="description" content="Explore the restaurant menu, build an order, and make a reservation.">
+    <title>Restaurant | My Portofolio</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="icon" href="../icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="offline.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../"><span class="brand-mark">R</span><span>THE OLIVE ROOM<small>ALBANIAN KITCHEN</small></span></a>
+      <nav aria-label="Main navigation"><a href="#menu">Menu</a><a href="#story">Our table</a><a href="#reserve">Reservations</a></nav>
+      <button class="bag-button" type="button" data-open-order>Order <span id="cart-count">0</span></button>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-image" role="img" aria-label="Warmly lit restaurant dining room"></div>
+        <div class="hero-content">
+          <p class="eyebrow"><span></span> TIRANA · ALBANIA</p>
+          <h1>Good food.<br><i>Long evenings.</i></h1>
+          <p>Seasonal Albanian cooking, made for sharing around the table.</p>
+          <a class="light-button" href="#menu">Explore the menu <span>↓</span></a>
+        </div>
+        <div class="hero-note">FRESH FROM<br>OUR KITCHEN</div>
+      </section>
+
+      <section class="menu-section" id="menu">
+        <div class="section-top"><div><p class="eyebrow">COOKED WITH CARE</p><h2>From our kitchen</h2></div><p>Local favourites and a few things<br>we make just because we love them.</p></div>
+        <div class="menu-layout">
+          <div class="menu-tabs" role="tablist" aria-label="Menu categories">
+            <button type="button" class="active" data-category="All">All <span>05</span></button>
+            <button type="button" data-category="Small plates">Small plates <span>02</span></button>
+            <button type="button" data-category="Mains">Mains <span>02</span></button>
+            <button type="button" data-category="Drinks">Drinks <span>01</span></button>
+          </div>
+          <div class="menu-list" id="menu-list" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="story" id="story">
+        <div class="story-stamp">MADE<br>TO SHARE</div>
+        <div><p class="eyebrow">A PLACE AT THE TABLE</p><h2>Good things happen<br>when we <i>slow down.</i></h2></div>
+        <p>Bring your favourite people. We’ll take care of the food, pour something good, and leave room for one more story.</p>
+      </section>
+
+      <section class="reservation" id="reserve">
+        <div class="reservation-copy"><p class="eyebrow">SAVE YOUR SEAT</p><h2>We’ll keep<br>a place <i>for you.</i></h2><p>Choose a day and tell us who’s coming.</p><div class="saved-note" id="saved-note" aria-live="polite"></div></div>
+        <form class="reservation-form" id="reservation-form">
+          <label>Your name<input name="name" autocomplete="name" required maxlength="70" placeholder="Name"></label>
+          <div class="form-row"><label>Date<input name="date" type="date" required></label><label>Guests<select name="guests"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label></div>
+          <label>Time<select name="time"><option>18:00</option><option>18:30</option><option selected>19:00</option><option>19:30</option><option>20:00</option><option>20:30</option></select></label>
+          <button class="dark-button" type="submit">Request a table <span>↗</span></button>
+          <p class="form-footnote">Demo reservation saved on this device.</p>
+        </form>
+      </section>
+
+      <section class="order-panel" id="order-panel" hidden>
+        <div class="order-backdrop" data-close-order></div>
+        <div class="order-drawer" role="dialog" aria-modal="true" aria-labelledby="order-title">
+          <button class="close-button" type="button" data-close-order aria-label="Close order">×</button>
+          <p class="eyebrow">YOUR SELECTION</p><h2 id="order-title">At your table</h2>
+          <div id="order-items" class="order-items"></div>
+          <div class="order-total"><span>Total</span><strong id="order-total">€0.00</strong></div>
+          <button class="dark-button" id="save-order" type="button">Save demo order <span>↗</span></button>
+          <p class="form-footnote" id="order-note" aria-live="polite">This preview does not process payments.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer"><a class="brand" href="../"><span class="brand-mark">R</span><span>THE OLIVE ROOM<small>ALBANIAN KITCHEN</small></span></a><span>Restaurant website concept</span><a href="https://github.com/kkomici24-bit/restaurant-app" target="_blank" rel="noreferrer">View source on GitHub ↗</a></footer>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js'));
+      }
+    </script>
+  </body>
+</html>

@@ -1,10 +1,16 @@
-const CACHE_NAME = 'my-portofolio-v1';
+const CACHE_NAME = 'my-portofolio-v3';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
   './manifest.webmanifest',
-  './icon.svg'
+  './icon.svg',
+  './restaurant/',
+  './restaurant/index.html',
+  './restaurant/style.css',
+  './restaurant/offline.css',
+  './restaurant/app.js',
+  './restaurant/manifest.webmanifest'
 ];
 
 self.addEventListener('install', event => {
@@ -26,14 +32,20 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
 
-  const requestUrl = new URL(request.url);
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).then(response => {
         const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
         return response;
-      }).catch(async () => (await caches.match(request)) || caches.match('./index.html'))
+      }).catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        const path = new URL(request.url).pathname;
+        return path.endsWith('/restaurant/') || path.endsWith('/restaurant')
+          ? caches.match('./restaurant/index.html')
+          : caches.match('./index.html');
+      })
     );
     return;
   }
