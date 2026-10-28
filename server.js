@@ -46,6 +46,16 @@ function adminOnly(req, res, next) {
   res.redirect('/admin/login');
 }
 
+const dbAll = (sql, params = []) => new Promise((resolve, reject) => {
+  db.all(sql, params, (error, rows) => error ? reject(error) : resolve(rows));
+});
+
+const dbGet = (sql, params = []) => new Promise((resolve, reject) => {
+  db.get(sql, params, (error, row) => error ? reject(error) : resolve(row));
+});
+
+const DEPARTMENTS = ['Kitchen', 'Front of house', 'Bar', 'Management', 'Cleaning', 'Other'];
+
 const hasEmailConfig = process.env.EMAIL_SMTP_HOST && process.env.FROM_EMAIL;
 const transporter = hasEmailConfig ? nodemailer.createTransport({
   host: process.env.EMAIL_SMTP_HOST,
@@ -306,16 +316,122 @@ app.get('/admin/logout', (req, res) => {
   res.redirect('/');
 });
 
-app.get('/admin', adminOnly, (req, res) => {
-  db.all('SELECT * FROM menu_items ORDER BY category', [], (err, items) => {
-    if (err) items = [];
-    db.all('SELECT * FROM reservations ORDER BY created_at DESC', [], (err2, reservations) => {
-      if (err2) reservations = [];
-      db.all('SELECT * FROM orders ORDER BY created_at DESC', [], (err3, orders) => {
-        if (err3) orders = [];
-        res.render('admin', { items, reservations, orders });
-      });
+app.get('/admin', adminOnly, async (req, res) => {
+  try {
+    const [items, reservations, orders, tables, staff, inventory, expenses, payroll, departmentTotals, revenue] = await Promise.all([
+      dbAll('SELECT * FROM menu_items ORDER BY category'),
+      dbAll('SELECT * FROM reservations ORDER BY created_at DESC'),
+      dbAll('SELECT * FROM orders ORDER BY created_at DESC'),
+      dbAll('SELECT * FROM restaurant_tables ORDER BY label'),
+      dbAll('SELECT * FROM staff ORDER BY active DESC, department, name'),
+      dbAll('SELECT * FROM inventory ORDER BY quantity <= low_stock_level DESC, name'),
+      dbAll('SELECT * FROM expenses ORDER BY expense_date DESC, id DESC LIMIT 100'),
+      dbAll('SELECT * FROM payroll ORDER BY payment_date DESC, id DESC LIMIT 100'),
+      dbAll(`SELECT department, SUM(amount) AS expenses_total FROM (
+        SELECT department, amount FROM expenses
+        UNION ALL
+        SELECT department, amount FROM payroll
+      ) GROUP BY department ORDER BY department`),
+      dbGet(`SELECT
+        COALESCE(SUM(CASE WHEN paid = 1 THEN total ELSE 0 END), 0) AS gross_revenue,
+        COALESCE(SUM(CASE WHEN paid = 1 AND substr(created_at, 1, 7) = strftime('%Y-%m', 'now') THEN total ELSE 0 END), 0) AS month_revenue,
+        (SELECT COALESCE(SUM(amount), 0) FROM expenses) AS expenses_total,
+        (SELECT COALESCE(SUM(amount), 0) FROM payroll) AS payroll_total
+        FROM orders`)
+    ]);
+    res.render('admin', { items, reservations, orders, tables, staff, inventory, expenses, payroll, departmentTotals, revenue });
+  } catch (error) {
+    console.error('Admin dashboard load error:', error);
+    res.status(500).send('Nuk u ngarkua paneli i administrimit.');
+  }
+});
+
+app.post('/api/admin/tables/:id/status', adminOnly, (req, res) => {
+  const allowedStatuses = ['available', 'occupied', 'reserved', 'cleaning'];
+  const { status } = req.body;
+  if (!allowedStatuses.includes(status)) return res.status(400).json({ error: 'Status i pavlefshëm.' });
+  db.run('UPDATE restaurant_tables SET status=?, updated_at=? WHERE id=?', [status, new Date().toISOString(), req.params.id], function (error) {
+    if (error) return res.status(500).json({ error: 'Nuk u përditësua tavolina.' });
+    if (!this.changes) return res.status(404).json({ error: 'Tavolina nuk u gjet.' });
+    res.json({ success: true, id: Number(req.params.id), status });
+  });
+});
+
+app.post('/api/admin/staff', adminOnly, (req, res) => {
+  const name = String(req.body.name || '').trim();
+  const role = String(req.body.role || '').trim();
+  const department = String(req.body.department || 'Front of house').trim();
+  const phone = String(req.body.phone || '').trim();
+  if (!name || !role || !DEPARTMENTS.includes(department)) return res.status(400).json({ error: 'Emri, pozicioni dhe departamenti kërkohen.' });
+  db.run('INSERT INTO staff (name, role, department, phone, created_at) VALUES (?, ?, ?, ?, ?)', [name, role, department, phone, new Date().toISOString()], function (error) {
+    if (error) return res.status(500).json({ error: 'Nuk u shtua punonjësi.' });
+    res.status(201).json({ success: true, id: this.lastID });
+  });
+});
+
+app.post('/api/admin/payroll', adminOnly, (req, res) => {
+  const staffId = Number(req.body.staff_id);
+  const amount = Number(req.body.amount);
+  const paymentDate = String(req.body.payment_date || '').trim();
+  const note = String(req.body.note || '').trim();
+  if (!Number.isInteger(staffId) || staffId <= 0 || !Number.isFinite(amount) || amount <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(paymentDate)) {
+    return res.status(400).json({ error: 'Kontrollo punonjësin, shumën dhe datën e pagesës.' });
+  }
+  db.get('SELECT id, name, department FROM staff WHERE id=? AND active=1', [staffId], (lookupError, person) => {
+    if (lookupError) return res.status(500).json({ error: 'Nuk u gjet punonjësi.' });
+    if (!person) return res.status(404).json({ error: 'Punonjësi aktiv nuk u gjet.' });
+    db.run('INSERT INTO payroll (staff_id, staff_name, department, amount, payment_date, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [person.id, person.name, person.department, amount, paymentDate, note, new Date().toISOString()], function (error) {
+      if (error) return res.status(500).json({ error: 'Nuk u regjistrua pagesa.' });
+      res.status(201).json({ success: true, id: this.lastID });
     });
+  });
+});
+
+app.post('/api/admin/staff/:id/status', adminOnly, (req, res) => {
+  const active = Number(req.body.active) === 1 ? 1 : 0;
+  db.run('UPDATE staff SET active=? WHERE id=?', [active, req.params.id], function (error) {
+    if (error) return res.status(500).json({ error: 'Nuk u përditësua stafi.' });
+    if (!this.changes) return res.status(404).json({ error: 'Punonjësi nuk u gjet.' });
+    res.json({ success: true, active });
+  });
+});
+
+app.post('/api/admin/expenses', adminOnly, (req, res) => {
+  const department = String(req.body.department || '').trim();
+  const description = String(req.body.description || '').trim();
+  const amount = Number(req.body.amount);
+  const expenseDate = String(req.body.expense_date || '').trim();
+  if (!department || !description || !Number.isFinite(amount) || amount <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) {
+    return res.status(400).json({ error: 'Plotëso kategorinë, përshkrimin, shumën dhe datën.' });
+  }
+  db.run('INSERT INTO expenses (department, description, amount, expense_date, created_at) VALUES (?, ?, ?, ?, ?)', [department, description, amount, expenseDate, new Date().toISOString()], function (error) {
+    if (error) return res.status(500).json({ error: 'Nuk u regjistrua shpenzimi.' });
+    res.status(201).json({ success: true, id: this.lastID });
+  });
+});
+
+app.post('/api/admin/inventory', adminOnly, (req, res) => {
+  const name = String(req.body.name || '').trim();
+  const department = String(req.body.department || 'Kitchen').trim();
+  const unit = String(req.body.unit || '').trim();
+  const quantity = Number(req.body.quantity);
+  const lowStockLevel = Number(req.body.low_stock_level);
+  if (!name || !unit || !DEPARTMENTS.includes(department) || !Number.isFinite(quantity) || quantity < 0 || !Number.isFinite(lowStockLevel) || lowStockLevel < 0) {
+    return res.status(400).json({ error: 'Kontrollo emrin, njësinë dhe sasitë.' });
+  }
+  db.run('INSERT INTO inventory (name, department, unit, quantity, low_stock_level, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(name) DO UPDATE SET department=excluded.department, unit=excluded.unit, quantity=excluded.quantity, low_stock_level=excluded.low_stock_level, updated_at=excluded.updated_at', [name, department, unit, quantity, lowStockLevel, new Date().toISOString()], function (error) {
+    if (error) return res.status(500).json({ error: 'Nuk u ruajt artikulli i stokut.' });
+    res.status(201).json({ success: true, id: this.lastID || null });
+  });
+});
+
+app.post('/api/admin/inventory/:id/adjust', adminOnly, (req, res) => {
+  const quantity = Number(req.body.quantity);
+  if (!Number.isFinite(quantity) || quantity < 0) return res.status(400).json({ error: 'Sasia duhet të jetë zero ose pozitive.' });
+  db.run('UPDATE inventory SET quantity=?, updated_at=? WHERE id=?', [quantity, new Date().toISOString(), req.params.id], function (error) {
+    if (error) return res.status(500).json({ error: 'Nuk u përditësua stoku.' });
+    if (!this.changes) return res.status(404).json({ error: 'Artikulli nuk u gjet.' });
+    res.json({ success: true, quantity });
   });
 });
 

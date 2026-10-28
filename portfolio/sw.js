@@ -1,10 +1,13 @@
-const CACHE_NAME = 'my-portofolio-v3';
+const CACHE_NAME = 'my-portofolio-v6';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
   './manifest.webmanifest',
   './icon.svg',
+  './calculator/',
+  './calculator/index.html',
+  './calculator/manifest.webmanifest',
   './restaurant/',
   './restaurant/index.html',
   './restaurant/style.css',
@@ -42,6 +45,9 @@ self.addEventListener('fetch', event => {
         const cached = await caches.match(request);
         if (cached) return cached;
         const path = new URL(request.url).pathname;
+        if (path.endsWith('/calculator/') || path.endsWith('/calculator')) {
+          return caches.match('./calculator/index.html');
+        }
         return path.endsWith('/restaurant/') || path.endsWith('/restaurant')
           ? caches.match('./restaurant/index.html')
           : caches.match('./index.html');

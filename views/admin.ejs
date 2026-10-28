@@ -2,6 +2,51 @@
 
 <h1 class="mb-4">Paneli i Administrimit</h1>
 
+<p class="text-uppercase text-muted small mb-3">OPERACIONET · SOT</p>
+
+<section class="row g-3 mb-4" aria-label="Përmbledhje financiare">
+  <div class="col-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="small text-muted mb-2">Xhiro bruto · të paguara</p><strong class="fs-4"><%= Number(revenue.gross_revenue).toFixed(2) %> €</strong><div class="small text-muted mt-2">Muaji aktual: <%= Number(revenue.month_revenue).toFixed(2) %> €</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="small text-muted mb-2">Shpenzime të regjistruara</p><strong class="fs-4"><%= Number(revenue.expenses_total).toFixed(2) %> €</strong><div class="small text-muted mt-2">Të gjitha periudhat</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="small text-muted mb-2">Pagesa stafi</p><strong class="fs-4"><%= Number(revenue.payroll_total).toFixed(2) %> €</strong><div class="small text-muted mt-2">Të regjistruara</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="small text-muted mb-2">Bilanc neto operativ</p><strong class="fs-4"><%= (Number(revenue.gross_revenue) - Number(revenue.expenses_total) - Number(revenue.payroll_total)).toFixed(2) %> €</strong><div class="small text-muted mt-2">Bruto − shpenzime − paga të regjistruara</div></div></div></div>
+  <div class="col-6 col-xl-3"><div class="card h-100"><div class="card-body"><p class="small text-muted mb-2">Stok nën minimum</p><strong class="fs-4"><%= inventory.filter(function(item) { return Number(item.quantity) <= Number(item.low_stock_level); }).length %></strong><div class="small text-muted mt-2"><%= staff.filter(function(person) { return person.active; }).length %> punonjës aktivë</div></div></div></div>
+</section>
+
+<section class="card mb-4">
+  <div class="card-body">
+    <p class="text-uppercase text-muted small mb-1">DEPARTAMENTET</p>
+    <h2 class="h5">Shpenzime dhe paga sipas departamentit</h2>
+    <div class="row g-2 mt-1">
+      <% departmentTotals.forEach(function(department) { %>
+        <div class="col-6 col-md-4 col-xl-2"><div class="border rounded p-2 h-100"><div class="small text-muted"><%= department.department %></div><strong><%= Number(department.expenses_total).toFixed(2) %> €</strong></div></div>
+      <% }) %>
+      <% if (!departmentTotals.length) { %><p class="small text-muted mb-0">Nuk ka shpenzime ose paga të regjistruara sipas departamentit.</p><% } %>
+    </div>
+  </div>
+</section>
+
+<section class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3"><div><p class="text-uppercase text-muted small mb-1">FLOOR SERVICE</p><h2 class="h5 mb-0">Tavolinat live</h2></div><span class="small text-muted">Ndrysho statusin për ta sinkronizuar me panelin</span></div>
+    <div class="table-floor" aria-label="Plan perspektiv i tavolinave">
+      <% tables.forEach(function(table) { %>
+        <article class="floor-table status-<%= table.status %>">
+          <div class="table-top"><strong><%= table.label %></strong><span><%= table.seats %> vende</span></div>
+          <div class="table-status"><%= table.status === 'available' ? 'E lirë' : table.status === 'occupied' ? 'E zënë' : table.status === 'reserved' ? 'E rezervuar' : 'Pastrim' %></div>
+          <select class="form-select form-select-sm table-status-select" data-table-id="<%= table.id %>" aria-label="Statusi i tavolinës <%= table.label %>">
+            <option value="available" <%= table.status === 'available' ? 'selected' : '' %>>E lirë</option>
+            <option value="occupied" <%= table.status === 'occupied' ? 'selected' : '' %>>E zënë</option>
+            <option value="reserved" <%= table.status === 'reserved' ? 'selected' : '' %>>E rezervuar</option>
+            <option value="cleaning" <%= table.status === 'cleaning' ? 'selected' : '' %>>Pastrim</option>
+          </select>
+          <span class="table-leg leg-one"></span><span class="table-leg leg-two"></span>
+        </article>
+      <% }) %>
+    </div>
+    <div class="d-flex flex-wrap gap-3 small text-muted mt-3"><span><i class="status-key key-available"></i>E lirë</span><span><i class="status-key key-occupied"></i>E zënë</span><span><i class="status-key key-reserved"></i>E rezervuar</span><span><i class="status-key key-cleaning"></i>Pastrim</span></div>
+  </div>
+</section>
+
 <div class="row">
   <div class="col-md-6">
     <h3>Menaxho Menunë</h3>
@@ -69,8 +114,114 @@
         </div>
       <% }) } %>
     </div>
-    <a href="/admin/logout" class="btn btn-secondary mt-3">Dalje</a>
   </div>
 </div>
+
+<a href="/admin/logout" class="btn btn-secondary mt-3">Dalje</a>
+
+<section class="row g-4 mt-1">
+  <div class="col-12 col-xl-4">
+    <div class="card h-100"><div class="card-body">
+      <p class="text-uppercase text-muted small mb-1">PEOPLE</p><h2 class="h5">Stafi</h2>
+      <form class="row g-2 mb-3" data-admin-form="/api/admin/staff">
+        <div class="col-6"><input class="form-control" name="name" placeholder="Emri i plotë" required maxlength="100"></div>
+        <div class="col-6"><input class="form-control" name="role" placeholder="Pozicioni" required maxlength="80"></div>
+        <div class="col-6"><select class="form-select" name="department"><option>Front of house</option><option>Kitchen</option><option>Bar</option><option>Management</option><option>Cleaning</option><option>Other</option></select></div>
+        <div class="col-6"><input class="form-control" name="phone" placeholder="Telefon" maxlength="40"></div>
+        <div class="col-12 d-grid"><button class="btn btn-dark">Shto staf</button></div>
+      </form>
+      <div class="admin-list">
+        <% staff.forEach(function(person) { %>
+          <div class="admin-list-row"><div><strong><%= person.name %></strong><div class="small text-muted"><%= person.role %> · <%= person.department %><%= person.phone ? ' · ' + person.phone : '' %></div></div><button class="btn btn-sm <%= person.active ? 'btn-outline-secondary' : 'btn-outline-success' %> staff-status" data-staff-id="<%= person.id %>" data-active="<%= person.active ? 1 : 0 %>"><%= person.active ? 'Aktiv' : 'Joaktiv' %></button></div>
+        <% }) %>
+        <% if (!staff.length) { %><p class="small text-muted">Nuk ka staf të regjistruar.</p><% } %>
+      </div>
+      <hr>
+      <h3 class="h6">Regjistro pagesë stafi</h3>
+      <form class="row g-2 mb-3" data-admin-form="/api/admin/payroll">
+        <div class="col-12"><select class="form-select" name="staff_id" required><option value="">Zgjidh punonjësin</option><% staff.filter(function(person) { return person.active; }).forEach(function(person) { %><option value="<%= person.id %>"><%= person.name %> · <%= person.department %></option><% }) %></select></div>
+        <div class="col-6"><input class="form-control" name="amount" type="number" min="0.01" step="0.01" placeholder="Shuma €" required></div>
+        <div class="col-6"><input class="form-control" name="payment_date" type="date" required></div>
+        <div class="col-8"><input class="form-control" name="note" placeholder="Shënim (opsional)" maxlength="160"></div>
+        <div class="col-4 d-grid"><button class="btn btn-outline-dark">Regjistro</button></div>
+      </form>
+      <div class="admin-list">
+        <% payroll.slice(0, 6).forEach(function(payment) { %>
+          <div class="admin-list-row"><div><strong><%= payment.staff_name %></strong><div class="small text-muted"><%= payment.department %> · <%= payment.payment_date %></div></div><strong><%= Number(payment.amount).toFixed(2) %> €</strong></div>
+        <% }) %>
+        <% if (!payroll.length) { %><p class="small text-muted">Nuk ka pagesa stafi të regjistruara.</p><% } %>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col-12 col-xl-4">
+    <div class="card h-100"><div class="card-body">
+      <p class="text-uppercase text-muted small mb-1">CASH FLOW</p><h2 class="h5">Regjistro shpenzim</h2>
+      <form class="row g-2 mb-3" data-admin-form="/api/admin/expenses">
+        <div class="col-6"><select class="form-select" name="department" required><option value="">Departamenti</option><option>Kitchen</option><option>Front of house</option><option>Rent</option><option>Utilities</option><option>Marketing</option><option>Other</option></select></div>
+        <div class="col-6"><input class="form-control" name="amount" type="number" min="0.01" step="0.01" placeholder="Shuma €" required></div>
+        <div class="col-7"><input class="form-control" name="description" placeholder="Përshkrimi" required maxlength="160"></div>
+        <div class="col-5"><input class="form-control" name="expense_date" type="date" required></div>
+        <div class="col-12"><button class="btn btn-dark">Ruaj shpenzimin</button></div>
+      </form>
+      <div class="admin-list">
+        <% expenses.slice(0, 8).forEach(function(expense) { %>
+          <div class="admin-list-row"><div><strong><%= expense.description %></strong><div class="small text-muted"><%= expense.department %> · <%= expense.expense_date %></div></div><strong><%= Number(expense.amount).toFixed(2) %> €</strong></div>
+        <% }) %>
+        <% if (!expenses.length) { %><p class="small text-muted">Nuk ka shpenzime të regjistruara.</p><% } %>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col-12 col-xl-4">
+    <div class="card h-100"><div class="card-body">
+      <p class="text-uppercase text-muted small mb-1">INVENTORY</p><h2 class="h5">Stoku</h2>
+      <form class="row g-2 mb-3" data-admin-form="/api/admin/inventory">
+        <div class="col-6"><input class="form-control" name="name" placeholder="Artikulli" required maxlength="100"></div>
+        <div class="col-6"><select class="form-select" name="department"><option>Kitchen</option><option>Bar</option><option>Front of house</option><option>Other</option></select></div>
+        <div class="col-6"><input class="form-control" name="unit" placeholder="Njësia: kg, copë" required maxlength="24"></div>
+        <div class="col-5"><input class="form-control" name="quantity" type="number" min="0" step="0.01" placeholder="Sasia" required></div>
+        <div class="col-5"><input class="form-control" name="low_stock_level" type="number" min="0" step="0.01" placeholder="Min." required></div>
+        <div class="col-2 d-grid"><button class="btn btn-dark" aria-label="Ruaj artikullin">+</button></div>
+      </form>
+      <div class="admin-list">
+        <% inventory.forEach(function(item) { var low = Number(item.quantity) <= Number(item.low_stock_level); %>
+          <div class="admin-list-row"><div><strong><%= item.name %></strong><div class="small text-muted"><%= item.department %></div><div class="small <%= low ? 'text-danger' : 'text-muted' %>"><%= low ? 'Nën minimum' : 'Në nivel' %> · minimumi <%= item.low_stock_level %> <%= item.unit %></div></div><form class="stock-adjust" data-stock-id="<%= item.id %>"><input class="form-control form-control-sm" name="quantity" type="number" min="0" step="0.01" value="<%= item.quantity %>" aria-label="Sasia e <%= item.name %>"></form></div>
+        <% }) %>
+        <% if (!inventory.length) { %><p class="small text-muted">Nuk ka artikuj inventari.</p><% } %>
+      </div>
+      <p class="small text-muted mt-2 mb-0">Enter në fushën e sasisë për të ruajtur numrin e ri.</p>
+    </div></div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('[data-admin-form]').forEach(form => form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const body = Object.fromEntries(new FormData(form));
+    const response = await fetch(form.dataset.adminForm, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const result = await response.json();
+    if (!response.ok) return alert(result.error || 'Ruajtja dështoi.');
+    location.reload();
+  }));
+
+  document.querySelectorAll('.table-status-select').forEach(select => select.addEventListener('change', async () => {
+    const response = await fetch(`/api/admin/tables/${select.dataset.tableId}/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: select.value }) });
+    if (!response.ok) location.reload();
+    else location.reload();
+  }));
+
+  document.querySelectorAll('.staff-status').forEach(button => button.addEventListener('click', async () => {
+    await fetch(`/api/admin/staff/${button.dataset.staffId}/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ active: button.dataset.active === '1' ? 0 : 1 }) });
+    location.reload();
+  }));
+
+  document.querySelectorAll('.stock-adjust input').forEach(input => input.addEventListener('change', async () => {
+    const form = input.closest('.stock-adjust');
+    const response = await fetch(`/api/admin/inventory/${form.dataset.stockId}/adjust`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity: input.value }) });
+    if (response.ok) location.reload();
+    else alert('Stoku nuk u përditësua.');
+  }));
+</script>
 
 <%- include('partials/footer') %>

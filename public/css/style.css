@@ -6,3 +6,52 @@ footer { position: relative; }
 /* Small enhancements */
 .navbar-brand { font-weight: 700; }
 .add-to-cart { min-width: 120px; }
+.table-floor {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(90px, 1fr));
+	gap: clamp(18px, 4vw, 42px);
+	padding: 38px 28px;
+	perspective: 900px;
+	background-color: #edf0e9;
+	background-image: linear-gradient(rgba(42, 63, 53, .045) 1px, transparent 1px), linear-gradient(90deg, rgba(42, 63, 53, .045) 1px, transparent 1px);
+	background-size: 24px 24px;
+}
+.floor-table {
+	position: relative;
+	z-index: 0;
+	min-height: 122px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	border: 1px solid #c8d0c8;
+	border-radius: 50% / 38%;
+	background: #fff;
+	box-shadow: 0 11px 0 #d9dfd8, 0 15px 20px rgba(24, 35, 31, .12);
+	transform: rotateX(10deg);
+}
+.table-top { display: flex; flex-direction: column; align-items: center; line-height: 1.2; }
+.table-top strong { font-size: 14px; }
+.table-top span, .table-status { color: #68756c; font-size: 10px; }
+.table-status { font-weight: 700; }
+.floor-table .form-select { width: auto; max-width: 118px; z-index: 2; font-size: 10px; }
+.status-available { border-color: #80ae91; background: #f5fbf6; }
+.status-occupied { border-color: #db8d7c; background: #fff6f3; }
+.status-reserved { border-color: #d3af5c; background: #fffaf0; }
+.status-cleaning { border-color: #8ca2bc; background: #f3f7fc; }
+.table-leg { position: absolute; z-index: -1; top: 50%; width: 18px; height: 18px; border: 2px solid #aeb8ae; border-radius: 50%; background: #e6ebe4; }
+.leg-one { left: -9px; }
+.leg-two { right: -9px; }
+.status-key { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: #80ae91; }
+.key-occupied { background: #db8d7c; }
+.key-reserved { background: #d3af5c; }
+.key-cleaning { background: #8ca2bc; }
+.admin-list { max-height: 320px; overflow: auto; }
+.admin-list-row { min-height: 51px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #eceee9; padding: 8px 0; font-size: 13px; }
+.admin-list-row:first-child { border-top: 0; }
+.stock-adjust { width: 88px; }
+@media (max-width: 600px) {
+	.table-floor { grid-template-columns: repeat(2, minmax(90px, 1fr)); padding: 24px 14px; gap: 25px 20px; }
+	.floor-table { min-height: 116px; }
+}

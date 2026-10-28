@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e1b4b">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="../icon.svg" type="image/svg+xml">
+    <title>Makinë Llogaritëse Shumë-Funksionale</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .btn-calc {
+            transition: all 0.2s ease;
+            backdrop-filter: blur(5px);
+        }
+        .btn-calc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+        }
+        .btn-calc:active {
+            transform: translateY(1px);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.5);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.8);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 text-white">
+
+    <div class="glass w-full max-w-4xl rounded-3xl p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-6 shadow-2xl">
+        
+        <!-- Pjesa Kryesore e Llogaritëses (2 Kolona në ekran të madh) -->
+        <div class="lg:col-span-2 space-y-5">
+            
+            <!-- Header/Titulli & Modaliteti -->
+            <div class="flex justify-between items-center pb-2 border-b border-white/10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-purple-600/30 flex items-center justify-center border border-purple-500/30">
+                        <i class="fa-solid fa-calculator text-purple-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg text-purple-200">Makinë Llogaritëse Smart</h1>
+                    </div>
+                </div>
+                
+                <!-- Tab Controls -->
+                <div class="flex bg-slate-900/60 p-1 rounded-xl border border-white/10 text-xs">
+                    <button id="tab-basic" onclick="switchTab('basic')" class="px-3 py-1.5 rounded-lg bg-purple-600 font-semibold transition">Standarde</button>
+                    <button id="tab-scientific" onclick="switchTab('scientific')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Shkencore</button>
+                    <button id="tab-converter" onclick="switchTab('converter')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Konvertues</button>
+                </div>
+            </div>
+
+            <!-- Ekrani i Rezultatit (Display) -->
+            <div id="calculator-display" class="bg-slate-950/70 border border-white/10 rounded-2xl p-5 text-right flex flex-col justify-between min-h-[110px] relative overflow-hidden shadow-inner">
+                <div id="expression-display" class="text-slate-400 text-sm md:text-base font-mono h-6 overflow-x-auto whitespace-nowrap"></div>
+                <div id="result-display" class="text-3xl md:text-4xl font-bold font-mono tracking-wide text-purple-300 overflow-x-auto whitespace-nowrap">0</div>
+            </div>
+
+            <!-- Pamja: Standarde & Shkencore -->
+            <div id="view-calculator" class="space-y-3">
+                <!-- Seksioni Shkencor (I fshehur sipas parazgjedhjes) -->
+                <div id="scientific-keypad" class="hidden grid grid-cols-5 gap-2 pt-1 border-t border-white/5">
+                    <button onclick="appendMath('sin(')" class="btn-calc bg-slate-800/60 hover:bg-slate-700/60 text-purple-300 py-2.5 rounded-xl text-sm font-semibold">sin</button>
+                    <button onclick="appendMath('cos(')" class="btn-calc bg-slate-800/60 hover:bg-slate-700/60 text-purple-300 py-2.5 rounded-xl text-sm font-semibold">cos</button>
+                    <button onclick="appendMath('tan(')" class="btn-calc bg-slate-800/60 hover:bg-slate-700/60 text-purple-300 py-2.5 rounded-xl text-sm font-semibold">tan</button>
+                    <button onclick="appendMath('log(')" class="btn-calc bg-slate-800/60 hover:bg-slate-700/60 text-purple-300 py-2.5 rounded-xl text-sm font-semibold">log</button>
+                    <button onclick="appendMath('ln(')" class="btn-calc bg-slate-800/60 hover:bg-slate-700/60 text-purple-300 py-2.5 rounded-xl text-sm font-semibold">ln</button>
+                    
+                    <button onclick="appendValue('Math.PI')" class="btn-calc bg-slate-800/60 hover:bg-slate-700/60 text-purple-300 py-2.5 rounded-xl text-sm font-semibold">π</button>
+                    <button onclick="appendValue('Math.E')" class="btn-calc bg-slate-800/60 hover:bg-slate-700/60 text-purple-300 py-2.5 rounded-xl text-sm font-semibold">e</button>
+                    <button onclick="appendMath('sqrt(')" class="btn-calc bg-slate-800/60 hover:bg-slate-700/60 text-purple-300 py-2.5 rounded-xl text-sm font-semibold">√x</button>
+                    <button onclick="appendValue('**')" class="btn-calc bg-slate-800/60 hover:bg-slate-700/60 text-purple-300 py-2.5 rounded-xl text-sm font-semibold">x^y</button>
+                    <button onclick="appendMath('fact(')" class="btn-calc bg-slate-800/60 hover:bg-slate-700/60 text-purple-300 py-2.5 rounded-xl text-sm font-semibold">n!</button>
+                </div>
+
+                <!-- Tastiera Kryesore (Keypad) -->
+                <div class="grid grid-cols-4 gap-3">
+                    <!-- Rreshti 1 -->
+                    <button onclick="clearAll()" class="btn-calc bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 py-3.5 rounded-xl font-bold text-lg">AC</button>
+                    <button onclick="deleteLast()" class="btn-calc bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 py-3.5 rounded-xl font-bold text-lg"><i class="fa-solid fa-backspace"></i></button>
+                    <button onclick="appendValue('%')" class="btn-calc bg-slate-800/80 hover:bg-slate-700 text-purple-300 py-3.5 rounded-xl font-bold text-lg">%</button>
+                    <button onclick="appendValue('/')" class="btn-calc bg-purple-600 hover:bg-purple-500 text-white py-3.5 rounded-xl font-bold text-xl">÷</button>
+                    
+                    <!-- Rreshti 2 -->
+                    <button onclick="appendValue('7')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">7</button>
+                    <button onclick="appendValue('8')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">8</button>
+                    <button onclick="appendValue('9')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">9</button>
+                    <button onclick="appendValue('*')" class="btn-calc bg-purple-600 hover:bg-purple-500 text-white py-3.5 rounded-xl font-bold text-xl">×</button>
+                    
+                    <!-- Rreshti 3 -->
+                    <button onclick="appendValue('4')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">4</button>
+                    <button onclick="appendValue('5')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">5</button>
+                    <button onclick="appendValue('6')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">6</button>
+                    <button onclick="appendValue('-')" class="btn-calc bg-purple-600 hover:bg-purple-500 text-white py-3.5 rounded-xl font-bold text-xl">−</button>
+                    
+                    <!-- Rreshti 4 -->
+                    <button onclick="appendValue('1')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">1</button>
+                    <button onclick="appendValue('2')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">2</button>
+                    <button onclick="appendValue('3')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">3</button>
+                    <button onclick="appendValue('+')" class="btn-calc bg-purple-600 hover:bg-purple-500 text-white py-3.5 rounded-xl font-bold text-xl">+</button>
+                    
+                    <!-- Rreshti 5 -->
+                    <button onclick="toggleSign()" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">±</button>
+                    <button onclick="appendValue('0')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">0</button>
+                    <button onclick="appendValue('.')" class="btn-calc bg-slate-800/40 hover:bg-slate-700/50 text-white py-3.5 rounded-xl font-semibold text-xl">.</button>
+                    <button onclick="calculateResult()" class="btn-calc bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3.5 rounded-xl font-bold text-xl shadow-lg shadow-purple-500/30">=</button>
+                </div>
+            </div>
+
+            <!-- Pamja: Konvertuesi i Njësive (I fshehur) -->
+            <div id="view-converter" class="hidden space-y-4 py-2">
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold text-purple-300 uppercase tracking-wider">Kategoria e Konvertimit</label>
+                    <select id="conv-type" onchange="updateConverterUnits()" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500">
+                        <option value="length">Gjatësi (Metra, Kilometra, Mile, Feet)</option>
+                        <option value="weight">Peshë (Kg, Gram, Pounds)</option>
+                        <option value="temp">Temperaturë (°C, °F, Kelvin)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div class="space-y-2">
+                        <label class="text-xs text-slate-400">Nga:</label>
+                        <input type="number" id="conv-input" value="1" oninput="convertUnits()" class="w-full bg-slate-900/80 border border-white/10 rounded-xl p-3 text-xl font-mono text-purple-200 focus:outline-none focus:border-purple-500">
+                        <select id="conv-from" onchange="convertUnits()" class="w-full bg-slate-800 border border-white/10 rounded-xl p-2.5 text-sm text-slate-200"></select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs text-slate-400">Në:</label>
+                        <div id="conv-output" class="w-full bg-slate-950/80 border border-purple-500/30 rounded-xl p-3 text-xl font-mono text-green-400 overflow-x-auto">0</div>
+                        <select id="conv-to" onchange="convertUnits()" class="w-full bg-slate-800 border border-white/10 rounded-xl p-2.5 text-sm text-slate-200"></select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seksioni Anësor: Historiku (1 Kolonë) -->
+        <div class="border-t lg:border-t-0 lg:border-l border-white/10 pt-6 lg:pt-0 lg:pl-6 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-purple-200 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-purple-400"></i> Historiku
+                    </h3>
+                    <button onclick="clearHistory()" class="text-xs text-slate-400 hover:text-red-400 transition flex items-center gap-1">
+                        <i class="fa-solid fa-trash-can"></i> Pastro
+                    </button>
+                </div>
+
+                <div id="history-list" class="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                    <div id="history-empty" class="text-center text-slate-500 text-sm py-8">
+                        Nuk ka llogaritje në historik.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer / Udhëzim tastiere -->
+            <div class="mt-6 pt-4 border-t border-white/10 text-xs text-slate-400 flex items-center gap-2">
+                <i class="fa-solid fa-keyboard text-purple-400 text-sm"></i>
+                <span>Mbështet tastierën (0-9, +, -, *, /, Enter, Backspace)</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Logjika -->
+    <script>
+        let currentExpression = '';
+        let lastResult = null;
+        let history = [];
+
+        const exprDisplay = document.getElementById('expression-display');
+        const resDisplay = document.getElementById('result-display');
+        const historyList = document.getElementById('history-list');
+        const historyEmpty = document.getElementById('history-empty');
+
+        // Ndrrimi i Tab-eve
+        function switchTab(tab) {
+            const btnBasic = document.getElementById('tab-basic');
+            const btnSci = document.getElementById('tab-scientific');
+            const btnConv = document.getElementById('tab-converter');
+            
+            const sciKeypad = document.getElementById('scientific-keypad');
+            const calcView = document.getElementById('view-calculator');
+            const convView = document.getElementById('view-converter');
+            const calcDisplay = document.getElementById('calculator-display');
+
+            // Reset tab button styles
+            [btnBasic, btnSci, btnConv].forEach(b => {
+                b.className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition";
+            });
+
+            if (tab === 'basic') {
+                btnBasic.className = "px-3 py-1.5 rounded-lg bg-purple-600 font-semibold text-white transition";
+                sciKeypad.classList.add('hidden');
+                calcView.classList.remove('hidden');
+                convView.classList.add('hidden');
+                calcDisplay.classList.remove('hidden');
+            } else if (tab === 'scientific') {
+                btnSci.className = "px-3 py-1.5 rounded-lg bg-purple-600 font-semibold text-white transition";
+                sciKeypad.classList.remove('hidden');
+                calcView.classList.remove('hidden');
+                convView.classList.add('hidden');
+                calcDisplay.classList.remove('hidden');
+            } else if (tab === 'converter') {
+                btnConv.className = "px-3 py-1.5 rounded-lg bg-purple-600 font-semibold text-white transition";
+                calcView.classList.add('hidden');
+                convView.classList.remove('hidden');
+                calcDisplay.classList.add('hidden');
+                updateConverterUnits();
+            }
+        }
+
+        // Shto karakter në ekran
+        function appendValue(val) {
+            if (resDisplay.innerText === 'Error') {
+                clearAll();
+            }
+            currentExpression += val;
+            updateDisplay();
+        }
+
+        function appendMath(fnName) {
+            if (resDisplay.innerText === 'Error') {
+                clearAll();
+            }
+            currentExpression += fnName;
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            // Zëvendësim vizual për ekranin
+            let prettyExpr = currentExpression
+                .replace(/\*/g, ' × ')
+                .replace(/\//g, ' ÷ ')
+                .replace(/-/g, ' − ')
+                .replace(/\+/g, ' + ')
+                .replace(/Math.PI/g, 'π')
+                .replace(/Math.E/g, 'e')
+                .replace(/sqrt\(/g, '√(');
+
+            exprDisplay.innerText = prettyExpr;
+        }
+
+        function clearAll() {
+            currentExpression = '';
+            exprDisplay.innerText = '';
+            resDisplay.innerText = '0';
+        }
+
+        function deleteLast() {
+            currentExpression = currentExpression.slice(0, -1);
+            updateDisplay();
+            if (currentExpression === '') {
+                resDisplay.innerText = '0';
+            }
+        }
+
+        function toggleSign() {
+            if (!currentExpression) return;
+            if (currentExpression.startsWith('-')) {
+                currentExpression = currentExpression.substring(1);
+            } else {
+                currentExpression = '-' + currentExpression;
+            }
+            updateDisplay();
+        }
+
+        // Llogaritja e faktorialit
+        function fact(n) {
+            if (n < 0) return NaN;
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) result *= i;
+            return result;
+        }
+
+        // Llogaritja e Rezultatit
+        function calculateResult() {
+            if (!currentExpression) return;
+
+            try {
+                // Përgatitja e shprehjes për eval të sigurt
+                let evalExpr = currentExpression
+                    .replace(/sin\(/g, 'Math.sin(')
+                    .replace(/cos\(/g, 'Math.cos(')
+                    .replace(/tan\(/g, 'Math.tan(')
+                    .replace(/log\(/g, 'Math.log10(')
+                    .replace(/ln\(/g, 'Math.log(')
+                    .replace(/sqrt\(/g, 'Math.sqrt(');
+
+                // Zëvendësim i faktorialit nëse ka n!
+                evalExpr = evalExpr.replace(/fact\((\d+)\)/g, (match, p1) => fact(parseInt(p1)));
+
+                let result = Function('"use strict"; return (' + evalExpr + ')')();
+
+                // Formatimi i rezultatit
+                if (typeof result === 'number' && !isNaN(result)) {
+                    if (!Number.isInteger(result)) {
+                        result = parseFloat(result.toFixed(8));
+                    }
+                    
+                    addToHistory(exprDisplay.innerText || currentExpression, result);
+                    resDisplay.innerText = result;
+                    currentExpression = result.toString();
+                } else {
+                    resDisplay.innerText = 'Error';
+                }
+            } catch (e) {
+                resDisplay.innerText = 'Error';
+            }
+        }
+
+        // Menaxhimi i Historikut
+        function addToHistory(expr, result) {
+            history.unshift({ expr, result });
+            if (history.length > 10) history.pop();
+            renderHistory();
+        }
+
+        function renderHistory() {
+            if (history.length === 0) {
+                historyEmpty.classList.remove('hidden');
+                historyList.innerHTML = '';
+                historyList.appendChild(historyEmpty);
+                return;
+            }
+
+            historyEmpty.classList.add('hidden');
+            historyList.innerHTML = '';
+
+            history.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = "bg-slate-900/60 border border-white/5 p-3 rounded-xl hover:border-purple-500/40 cursor-pointer transition group";
+                div.onclick = () => {
+                    currentExpression = item.result.toString();
+                    resDisplay.innerText = item.result;
+                    exprDisplay.innerText = item.expr;
+                };
+
+                div.innerHTML = `
+                    <div class="text-xs text-slate-400 group-hover:text-purple-300 font-mono transition">${item.expr}</div>
+                    <div class="text-base font-bold font-mono text-purple-200 text-right">= ${item.result}</div>
+                `;
+
+                historyList.appendChild(div);
+            });
+        }
+
+        function clearHistory() {
+            history = [];
+            renderHistory();
+        }
+
+        // --- Logjika e Konvertuesit të Njësive ---
+        const unitsData = {
+            length: {
+                units: ['Metra (m)', 'Kilometra (km)', 'Centimetra (cm)', 'Mile (mi)', 'Feet (ft)'],
+                rates: { 'Metra (m)': 1, 'Kilometra (km)': 0.001, 'Centimetra (cm)': 100, 'Mile (mi)': 0.000621371, 'Feet (ft)': 3.28084 }
+            },
+            weight: {
+                units: ['Kilogram (kg)', 'Gram (g)', 'Pound (lbs)', 'Ounce (oz)'],
+                rates: { 'Kilogram (kg)': 1, 'Gram (g)': 1000, 'Pound (lbs)': 2.20462, 'Ounce (oz)': 35.274 }
+            },
+            temp: {
+                units: ['Celsius (°C)', 'Fahrenheit (°F)', 'Kelvin (K)']
+            }
+        };
+
+        function updateConverterUnits() {
+            const type = document.getElementById('conv-type').value;
+            const fromSelect = document.getElementById('conv-from');
+            const toSelect = document.getElementById('conv-to');
+
+            fromSelect.innerHTML = '';
+            toSelect.innerHTML = '';
+
+            unitsData[type].units.forEach((u, i) => {
+                fromSelect.options.add(new Option(u, u));
+                toSelect.options.add(new Option(u, u));
+            });
+
+            if (toSelect.options.length > 1) {
+                toSelect.selectedIndex = 1;
+            }
+
+            convertUnits();
+        }
+
+        function convertUnits() {
+            const type = document.getElementById('conv-type').value;
+            const val = parseFloat(document.getElementById('conv-input').value) || 0;
+            const from = document.getElementById('conv-from').value;
+            const to = document.getElementById('conv-to').value;
+            const output = document.getElementById('conv-output');
+
+            if (type === 'temp') {
+                let res = val;
+                if (from === 'Celsius (°C)' && to === 'Fahrenheit (°F)') res = (val * 9/5) + 32;
+                else if (from === 'Celsius (°C)' && to === 'Kelvin (K)') res = val + 273.15;
+                else if (from === 'Fahrenheit (°F)' && to === 'Celsius (°C)') res = (val - 32) * 5/9;
+                else if (from === 'Fahrenheit (°F)' && to === 'Kelvin (K)') res = (val - 32) * 5/9 + 273.15;
+                else if (from === 'Kelvin (K)' && to === 'Celsius (°C)') res = val - 273.15;
+                else if (from === 'Kelvin (K)' && to === 'Fahrenheit (°F)') res = (val - 273.15) * 9/5 + 32;
+                output.innerText = res.toFixed(2);
+            } else {
+                const rates = unitsData[type].rates;
+                const baseVal = val / rates[from];
+                const res = baseVal * rates[to];
+                output.innerText = res < 0.0001 ? res.toExponential(4) : parseFloat(res.toFixed(6));
+            }
+        }
+
+        // Mbështetja për Tastierën
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') appendValue(e.key);
+            else if (['+', '-', '*', '/'].includes(e.key)) appendValue(e.key);
+            else if (e.key === '.') appendValue('.');
+            else if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); calculateResult(); }
+            else if (e.key === 'Backspace') deleteLast();
+            else if (e.key === 'Escape') clearAll();
+            else if (e.key === '%') appendValue('%');
+        });
+
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('../sw.js'));
+        }
+    </script>
+</body>
+</html>
