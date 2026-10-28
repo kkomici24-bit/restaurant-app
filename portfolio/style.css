@@ -148,7 +148,19 @@ h3 { margin: 18px 0 10px; font-size: clamp(24px, 3vw, 35px); line-height: 1.15; 
   background-size: 22px 22px;
   color: #f2f0e9;
 }
-.calculator-kicker { color: #d6f45b; font: 9px var(--mono); }
+.calculator-logo {
+  width: 35px;
+  height: 42px;
+  display: grid;
+  grid-template-rows: 12px 1fr;
+  gap: 5px;
+  padding: 5px;
+  border: 1.5px solid var(--lime);
+  border-radius: 5px;
+}
+.calculator-logo-screen { border-radius: 1px; background: var(--lime); }
+.calculator-logo-keys { display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px; }
+.calculator-logo-keys i { border-radius: 1px; background: #84965b; }
 .calculator-screen { display: flex; flex-direction: column; align-items: end; border-bottom: 1px solid #536259; padding: 6px 0 12px; font: 30px var(--mono); }
 .calculator-screen span { color: #95a397; font-size: 12px; }
 .calculator-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
