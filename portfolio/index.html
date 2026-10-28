@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f2f0e9">
     <meta name="description" content="Kalter Komici's portfolio of digital projects, built from idea to product.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>My Portofolio</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -78,5 +82,10 @@
       <span class="footer-copy">Personal portfolio · Albania</span>
       <a class="footer-email" href="https://github.com/kkomici24-bit" target="_blank" rel="noreferrer">github.com/kkomici24-bit <span aria-hidden="true">↗</span></a>
     </footer>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+      }
+    </script>
   </body>
 </html>
